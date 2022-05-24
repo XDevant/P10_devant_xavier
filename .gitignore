@@ -1,1 +1,4 @@
 /env
+softdesk/authentication/__pycache__
+softdesk/softdesk/__pycache__
+softdesk/projects/__pycache__
