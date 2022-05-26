@@ -23,18 +23,18 @@ router = routers.SimpleRouter()
 router.register(r'projects', ProjectViewSet, basename='project')
 
 project_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
-project_router.register(r'contributors', ContributorViewSet, basename='project-contributors')
-project_router.register(r'issues', IssueViewSet, basename='project-issues')
+project_router.register(r'contributors', ContributorViewSet, basename='contributors')
+project_router.register(r'issues', IssueViewSet, basename='issues')
 
-issue_router = routers.NestedSimpleRouter(router, r'issues', lookup='issue')
-issue_router.register(r'comments', CommentViewSet, basename='project-issue-comments')
+issue_router = routers.NestedSimpleRouter(project_router, r'issues', lookup='issues')
+issue_router.register(r'comments', CommentViewSet, basename='comments')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('^', include(router.urls)),
-    path('^', include(project_router.urls)),
-    path('^', include(issue_router.urls))
+    path(r'', include(router.urls)),
+    path(r'', include(project_router.urls)),
+    path(r'', include(issue_router.urls))
 ]
