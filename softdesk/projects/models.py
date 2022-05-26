@@ -16,7 +16,7 @@ class Project(models.Model):
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE,
-                                       related_name='project-author'
+                                       related_name='project_author'
                                        )
 
 
@@ -69,12 +69,12 @@ class Issue(models.Model):
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE,
-                                       related_name='issue-author'
+                                       related_name='issue_author'
                                        )
     assignee_user_id = models.ForeignKey(
                                          to=settings.AUTH_USER_MODEL,
                                          on_delete=models.CASCADE,
-                                         related_name='issue-assignee'
+                                         related_name='issue_assignee'
                                          )
     created_time = models.DateTimeField(auto_now_add=True)
 
@@ -84,7 +84,7 @@ class Comment(models.Model):
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE,
-                                       related_name='comment-author'
+                                       related_name='comment_author'
                                        )
     issue_id = models.ForeignKey(
                                  to=Issue,

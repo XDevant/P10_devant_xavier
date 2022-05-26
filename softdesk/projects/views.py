@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from projects.models import Project, Issue, Comment
 from projects.serializers import ProjectSerializerSelector, IssueSerializerSelector,\
                                  ContributorListSerializer, CommentListSerializer
-from softdesk.projects.permissions import IsContributor, IsProjectAuthorOrCR
+from projects.permissions import IsContributor, IsProjectAuthorOrCR
 
 
 class MultipleSerializerMixin:
