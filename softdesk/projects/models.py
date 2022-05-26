@@ -15,13 +15,14 @@ class Project(models.Model):
     type = models.CharField(choices=Type.choices, max_length=16)
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
-                                       on_delete=models.CASCADE
+                                       on_delete=models.CASCADE,
+                                       related_name='project-author'
                                        )
 
 
 class Contributor(models.Model):
     class Permission(models.TextChoices):
-        AUTHOR = 'Autheur'
+        AUTHOR = 'Auteur'
         CONTRIBUTOR = 'Contributeur'
 
 
@@ -68,12 +69,12 @@ class Issue(models.Model):
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE,
-                                       related_name='author'
+                                       related_name='issue-author'
                                        )
     assignee_user_id = models.ForeignKey(
                                          to=settings.AUTH_USER_MODEL,
                                          on_delete=models.CASCADE,
-                                         related_name='assignee'
+                                         related_name='issue-assignee'
                                          )
     created_time = models.DateTimeField(auto_now_add=True)
 
@@ -82,7 +83,8 @@ class Comment(models.Model):
     description = models.CharField(max_length=256)
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,
-                                       on_delete=models.CASCADE
+                                       on_delete=models.CASCADE,
+                                       related_name='comment-author'
                                        )
     issue_id = models.ForeignKey(
                                  to=Issue,
