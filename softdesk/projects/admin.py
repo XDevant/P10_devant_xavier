@@ -1,3 +1,5 @@
 from django.contrib import admin
+from projects.models import Project, Contributor, Issue, Comment
 
-# Register your models here.
+
+admin.site.register([Project, Contributor, Issue, Comment])

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from authentication.models import User
 
 
 class Project(models.Model):
@@ -10,6 +11,7 @@ class Project(models.Model):
         ANDROID = 'Android'
 
 
+    project_id = models.BigAutoField(primary_key=True)
     title = models.CharField(max_length=64)
     description = models.CharField(max_length=256)
     type = models.CharField(choices=Type.choices, max_length=16)
@@ -18,6 +20,13 @@ class Project(models.Model):
                                        on_delete=models.CASCADE,
                                        related_name='project_author'
                                        )
+    contributors = models.ManyToManyField(User, through='Contributor')
+
+    def save(self, *args, **kwags):
+        return super().save(*args, **kwags)
+
+    def delete(self, *args, **kwags):
+        return super().delete(*args, **kwags)
 
 
 class Contributor(models.Model):
@@ -80,6 +89,7 @@ class Issue(models.Model):
 
 
 class Comment(models.Model):
+    comment_id = models.BigAutoField(primary_key=True)
     description = models.CharField(max_length=256)
     author_user_id = models.ForeignKey(
                                        to=settings.AUTH_USER_MODEL,

@@ -1,28 +1,26 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, StringRelatedField
 from projects.models import Project, Issue, Comment
 
 
 class ProjectListSerializer(ModelSerializer):
-    contributors = SerializerMethodField()
-
     class Meta:
         model = Project
-        fields = ['id', 'title', 'description', 'type', 'author', 'contributors']
+        fields = ['project_id', 'title', 'description', 'type', 'author_user_id']
+        read_only_fields = ['author_user_id']
 
-    def get_contributors(self, instance):
-        queryset = instance.products.filter(active=True)
-        serializer = ProjectListSerializer(queryset, many=True)
-        return serializer.data
 
 class ProjectDetailSerializer(ModelSerializer):
+    contributors = StringRelatedField(many=True)
+
     class Meta:
         model = Project
-        fields = ['title', 'description', 'type', 'author', 'contributors', 'issues']
+        fields = ['project_id', 'title', 'description', 'type', 'author_user_id', 'contributors']
+        read_only_fields = ['author_user_id']
 
 
 class ProjectSerializerSelector:
     list = ProjectListSerializer
-    retrieve = ProjectDetailSerializer
+    detail = ProjectDetailSerializer
 
 
 class IssueListSerializer(ModelSerializer):
