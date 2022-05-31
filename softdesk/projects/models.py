@@ -22,11 +22,8 @@ class Project(models.Model):
                                        )
     contributors = models.ManyToManyField(User, through='Contributor')
 
-    def save(self, *args, **kwags):
-        return super().save(*args, **kwags)
-
-    def delete(self, *args, **kwags):
-        return super().delete(*args, **kwags)
+    def __str__(self):
+        return f"{self.title} {self.type} auteur:{self.author_user_id} "
 
 
 class Contributor(models.Model):
@@ -37,14 +34,18 @@ class Contributor(models.Model):
 
     user_id = models.ForeignKey(
                                 to=settings.AUTH_USER_MODEL,
-                                on_delete=models.CASCADE
+                                on_delete=models.CASCADE,
                                 )
     project_id = models.ForeignKey(
                                    to=Project,
-                                   on_delete=models.CASCADE
+                                   on_delete=models.CASCADE,
+                                   related_name='contributor_list'
                                    )
     permission = models.CharField(choices=Permission.choices, max_length=16)
     role = models.CharField(max_length=64)
+
+    def __str__(self):
+        return f"{self.user_id}:{self.permission} ({self.role})"
 
 
 class Issue(models.Model):

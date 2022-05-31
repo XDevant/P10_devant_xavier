@@ -20,7 +20,7 @@ class MultipleSerializerMixin:
         return self.serializer_class
 
 
-class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
+class ProjectViewSet(ModelViewSet):
     serializer_class = ProjectSerializerSelector.list
     multi_serializer_class = ProjectSerializerSelector
 
@@ -70,12 +70,17 @@ class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object(request)
-        self.perform_destroy(instance)
+        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self, request):
         user_id = request.user.user_id
-        return Project.objects.filter(contributor__user_id=user_id)
+        return Project.objects.filter(contributors__user_id=user_id)
+
+    def get_serializer_class(self):
+        if self.multi_serializer_class is not None and self.detail:
+            return self.multi_serializer_class.detail
+        return self.serializer_class
 
     def get_object(self, request):
         """
@@ -104,6 +109,7 @@ class ContributorViewSet(ModelViewSet):
     def get_queryset(self, request):
         user_id = request.user.user_id
         return Contributor.objects.filter(user_id=user_id)
+
 
 class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = IssueSerializerSelector.list
