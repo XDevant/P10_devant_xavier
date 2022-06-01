@@ -23,7 +23,7 @@ class Project(models.Model):
     contributors = models.ManyToManyField(User, through='Contributor')
 
     def __str__(self):
-        return f"{self.title} {self.type} auteur:{self.author_user_id} "
+        return f"{self.title} {self.type} auteur:{self.author_user_id}"
 
 
 class Contributor(models.Model):

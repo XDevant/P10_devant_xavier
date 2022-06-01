@@ -1,5 +1,6 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, StringRelatedField, RelatedField, PrimaryKeyRelatedField
 from projects.models import Project, Issue, Comment, Contributor
+from authentication.models import User
 
 
 class ContributorListSerializer(ModelSerializer):
@@ -37,21 +38,28 @@ class ProjectSerializerSelector:
 class IssueListSerializer(ModelSerializer):
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'tag', 'priority', 'project_id', 'status']
-        read_only_fields = ['author_user_id', 'project_id']
+        fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'assignee_user_id', 'project_id', 'author_user_id']
+        read_only_fields = ['assignee_user_id', 'project_id', 'author_user_id']
+
 
 class IssueDetailSerializer(ModelSerializer):
+
     class Meta:
         model = Issue
-        fields = []
+        fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'project_id', 'author_user_id', 'created_time']
+        read_only_fields = ['project_id', 'author_user_id', 'created_time']
+
+    def get_queryset(self):
+        return User.objects.all()
 
 
 class IssueSerializerSelector:
     list = IssueListSerializer
-    retrieve = IssueDetailSerializer
+    detail = IssueDetailSerializer
 
 
 class CommentListSerializer(ModelSerializer):
     class Meta:
         model = Comment
-        fields = []
+        fields = ['comment_id', 'description', 'author_user_id', 'issue_id', 'created_time']
+        read_only_fields = ['issue_id', 'author_user_id', 'created_time']

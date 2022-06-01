@@ -103,25 +103,41 @@ class ProjectViewSet(ModelViewSet):
 class ContributorViewSet(ModelViewSet):
     serializer_class = ContributorListSerializer
 
-    def partial_update(self, *args, **kwargs):
+    def update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def get_queryset(self, request):
-        user_id = request.user.user_id
-        return Contributor.objects.filter(user_id=user_id)
+    def get_queryset(self):
+        project_pk = self.kwargs['projects_pk']
+        return Contributor.objects.filter(project_id=project_pk)
 
 
 class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = IssueSerializerSelector.list
     multi_serializer_class = IssueSerializerSelector
+    #permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = Project.objects.get(project_id=self.kwargs["projects_pk"])
+        serializer.save(
+                        assignee_user_id=request.user,
+                        author_user_id=request.user,
+                        project_id=project
+                        )
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+                        serializer.data,
+                        status=status.HTTP_201_CREATED,
+                        headers=headers
+                        )
 
     def partial_update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
  
-    def get_queryset(self, request):
-        projects_pk = self.kwargs["projects_pk"]
-        user_id = request.user.user_id
-        return Issue.objects.filter(project_id=projects_pk)
+    def get_queryset(self):
+        project_pk = self.kwargs["projects_pk"]
+        return Issue.objects.filter(project_id=project_pk)
 
 
 class CommentViewSet(ModelViewSet):
@@ -131,4 +147,5 @@ class CommentViewSet(ModelViewSet):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get_queryset(self):
-        return Comment.objects.all()
+        issue_pk = self.kwargs["issues_pk"]
+        return Comment.objects.filter(issue_id=issue_pk)
