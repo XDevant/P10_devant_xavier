@@ -118,6 +118,16 @@ class CommentViewSet(ModelViewSet):
     multi_serializer_class = CommentSerializerSelector
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
 
+    def perform_create(self, serializer):
+        current_user = self.request.user
+        project = Project.objects.get(project_id=self.kwargs["projects_pk"])
+        issue = Issue.objects.get(id=self.kwargs["issues_pk"])
+        serializer.save(
+                        author_user_id=current_user,
+                        project_id=project,
+                        issue_id=issue
+                        )
+
     def partial_update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
