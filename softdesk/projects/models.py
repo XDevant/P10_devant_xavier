@@ -99,6 +99,7 @@ class Comment(models.Model):
                                        related_name='comment_author'
                                        )
     project_id = models.ForeignKey(
+                                   default=0,
                                    to=Project,
                                    on_delete=models.CASCADE
                                    )

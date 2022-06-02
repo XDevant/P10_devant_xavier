@@ -27,15 +27,7 @@ class ProjectViewSet(ModelViewSet):
     serializer_class = ProjectSerializerSelector.list
     multi_serializer_class = ProjectSerializerSelector
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset(request))
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    queryset = Project.objects.all()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -55,54 +47,21 @@ class ProjectViewSet(ModelViewSet):
                         headers=headers
                         )
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object(request)
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object(request)
-        serializer = self.get_serializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
-        return Response(serializer.data)
-
     def partial_update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object(request)
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def get_queryset(self, request):
-        user_id = request.user.user_id
-        return Project.objects.filter(contributors__user_id=user_id)
+    def get_queryset(self):
+        queryset = super(ProjectViewSet, self).get_queryset()
+        user =  self.request.user
+        user_id = getattr(user, 'user_id')
+        if isinstance(user, User):
+            return queryset.filter(contributors__user_id=user_id)
 
     def get_serializer_class(self):
         if self.multi_serializer_class is not None and self.detail:
             return self.multi_serializer_class.detail
         return self.serializer_class
 
-    def get_object(self, request):
-        """
-        Returns the object the view is displaying.
-        Override of the generic method with request arg for get_queryset
-        """
-        queryset = self.filter_queryset(self.get_queryset(request))
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        assert lookup_url_kwarg in self.kwargs, (
-            'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
-            (self.__class__.__name__, lookup_url_kwarg)
-            )
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        obj = get_object_or_404(queryset, **filter_kwargs)
-        self.check_object_permissions(self.request, obj)
-        return obj
 
 class ContributorViewSet(ModelViewSet):
     serializer_class = ContributorSerializerSelector.list
