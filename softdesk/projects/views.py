@@ -1,13 +1,16 @@
 from rest_framework.viewsets import ModelViewSet
 from projects.models import Project, Issue, Comment, Contributor
-from projects.serializers import ProjectSerializerSelector, IssueSerializerSelector,\
-                                 ContributorListSerializer, CommentListSerializer
+from projects.serializers import ProjectSerializerSelector,\
+                                 IssueSerializerSelector,\
+                                 ContributorSerializerSelector,\
+                                 CommentSerializerSelector
 from projects.permissions import IsContributor, IsAuthorOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 from authentication.models import User
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
+
 
 class MultipleSerializerMixin:
     serializer_class = None
@@ -23,6 +26,7 @@ class MultipleSerializerMixin:
 class ProjectViewSet(ModelViewSet):
     serializer_class = ProjectSerializerSelector.list
     multi_serializer_class = ProjectSerializerSelector
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset(request))
@@ -101,7 +105,9 @@ class ProjectViewSet(ModelViewSet):
         return obj
 
 class ContributorViewSet(ModelViewSet):
-    serializer_class = ContributorListSerializer
+    serializer_class = ContributorSerializerSelector.list
+    multi_serializer_class = ContributorSerializerSelector
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
 
     def update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -114,14 +120,22 @@ class ContributorViewSet(ModelViewSet):
 class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = IssueSerializerSelector.list
     multi_serializer_class = IssueSerializerSelector
-    #permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
+        if 'assignee_user_id' in  serializer.initial_data.keys():
+            try:
+                user_id = serializer.initial_data['assignee_user_id']
+                assignee = User.objects.get(user_id=user_id)
+            except Exception:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            assignee = request.user
         serializer.save(
-                        assignee_user_id=request.user,
+                        assignee_user_id=assignee,
                         author_user_id=request.user,
                         project_id=project
                         )
@@ -141,7 +155,9 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
 
 
 class CommentViewSet(ModelViewSet):
-    serializer_class = CommentListSerializer
+    serializer_class = CommentSerializerSelector.list
+    multi_serializer_class = CommentSerializerSelector
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
 
     def partial_update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -35,6 +35,7 @@ class Contributor(models.Model):
     user_id = models.ForeignKey(
                                 to=settings.AUTH_USER_MODEL,
                                 on_delete=models.CASCADE,
+                                related_name='project_contributors'
                                 )
     project_id = models.ForeignKey(
                                    to=Project,
@@ -52,7 +53,7 @@ class Issue(models.Model):
     class Tag(models.TextChoices):
         BUG = 'BUG'
         REFACTOR = 'AMELIORER'
-        TODO = 'TÄCHE'
+        TODO = 'TACHE'
 
 
     class Priority(models.TextChoices):
@@ -97,6 +98,10 @@ class Comment(models.Model):
                                        on_delete=models.CASCADE,
                                        related_name='comment_author'
                                        )
+    project_id = models.ForeignKey(
+                                   to=Project,
+                                   on_delete=models.CASCADE
+                                   )
     issue_id = models.ForeignKey(
                                  to=Issue,
                                  on_delete=models.CASCADE

@@ -4,10 +4,14 @@ from.models import Contributor
 
 class IsContributor(BasePermission):
     def has_permission(self, request, view):
-        return Contributor.objects.get(
+        try:
+            Contributor.objects.get(
                                        user_id=request.user.user_id,
                                        project_id=view.kwargs['projects_pk']
-                                       ).exists()
+                                       )
+            return True
+        except Exception:
+            return False
 
 
 class IsAuthorOrReadOnly(BasePermission):

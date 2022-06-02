@@ -3,11 +3,36 @@ from projects.models import Project, Issue, Comment, Contributor
 from authentication.models import User
 
 
+class UserFilteredPrimaryKeyRelatedField(PrimaryKeyRelatedField):
+    def get_queryset(self):
+        request = self.context.get('request', None)
+        queryset = super(UserFilteredPrimaryKeyRelatedField, self).get_queryset()
+        if not request or not queryset:
+            return None
+        return queryset.filter(user=request.user)
+
+
+class ContributorFilteredPKRF(PrimaryKeyRelatedField):
+    def get_queryset(self):
+        view = self.context.get('view', None)
+        queryset = super(ContributorFilteredPKRF, self).get_queryset()
+        if not view or not queryset:
+            return None
+        project_id = view.kwargs['projects_pk']
+        queryset = queryset.filter(project_contributors__project_id=project_id)
+        return queryset
+
+
 class ContributorListSerializer(ModelSerializer):
     class Meta:
         model = Contributor
         fields = ['id', 'user_id', 'project_id', 'permission', 'role']
         read_only_fields = ['user_id', 'project_id', 'permission']
+
+
+class ContributorSerializerSelector:
+    list = ContributorListSerializer
+    detail = ContributorListSerializer
 
 
 class ProjectListSerializer(ModelSerializer):
@@ -17,7 +42,7 @@ class ProjectListSerializer(ModelSerializer):
         model = Project
         fields = ['project_id', 'title', 'description', 'type', 'author_user_id']
         read_only_fields = ['author_user_id']
-
+        
 
 class ProjectDetailSerializer(ModelSerializer):
     contributor_list = ContributorListSerializer(many=True, read_only=True)
@@ -36,21 +61,21 @@ class ProjectSerializerSelector:
 
 
 class IssueListSerializer(ModelSerializer):
+    assignee_user_id = ContributorFilteredPKRF(queryset=User.objects.all(), required=False)
+
     class Meta:
         model = Issue
         fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'assignee_user_id', 'project_id', 'author_user_id']
-        read_only_fields = ['assignee_user_id', 'project_id', 'author_user_id']
+        read_only_fields = ['project_id', 'author_user_id']
 
 
 class IssueDetailSerializer(ModelSerializer):
+    assignee_user_id = ContributorFilteredPKRF(queryset=User.objects.all(), required=False)
 
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'project_id', 'author_user_id', 'created_time']
+        fields = '__all__'
         read_only_fields = ['project_id', 'author_user_id', 'created_time']
-
-    def get_queryset(self):
-        return User.objects.all()
 
 
 class IssueSerializerSelector:
@@ -61,5 +86,17 @@ class IssueSerializerSelector:
 class CommentListSerializer(ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['comment_id', 'description', 'author_user_id', 'issue_id', 'created_time']
-        read_only_fields = ['issue_id', 'author_user_id', 'created_time']
+        exclude = ['created_time']
+        read_only_fields = ['project_id', 'issue_id', 'author_user_id']
+
+
+class CommentDetailSerializer(ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ['project_id', 'issue_id', 'author_user_id', 'created_time']
+
+
+class CommentSerializerSelector:
+    list = CommentListSerializer
+    detail = CommentDetailSerializer
