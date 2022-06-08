@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from.models import Contributor
+from .models import Contributor
 
 
 class IsContributor(BasePermission):
@@ -23,3 +23,10 @@ class IsAuthorOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return obj.author_user_id == request.user
+
+class IsProjectAuthorOrReadOnly(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        author_user_id = Contributor.objects.get(project_id=view.kwargs['projects_pk'], permission="Auteur").user_id
+        return author_user_id == request.user

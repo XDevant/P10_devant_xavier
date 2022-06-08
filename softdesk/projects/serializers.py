@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, StringRelatedField, RelatedField, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, StringRelatedField, EmailField, PrimaryKeyRelatedField
 from projects.models import Project, Issue, Comment, Contributor
 from authentication.models import User
 
@@ -24,15 +24,34 @@ class ContributorFilteredPKRF(PrimaryKeyRelatedField):
 
 
 class ContributorListSerializer(ModelSerializer):
+    user_id = StringRelatedField()
+
     class Meta:
         model = Contributor
-        fields = ['id', 'user_id', 'project_id', 'permission', 'role']
-        read_only_fields = ['user_id', 'project_id', 'permission']
+        fields = ['id', 'user_id', 'role']
+        read_only_fields = ['user_id']
+
+
+class ContributorCreateSerializer(ModelSerializer):
+    user_id = EmailField(max_length=140)
+
+    class Meta:
+        model = Contributor
+        fields = ['id', 'user_id', 'role']
+
+class ContributorDetailSerializer(ModelSerializer):
+    user_id = StringRelatedField()
+
+    class Meta:
+        model = Contributor
+        fields = '__all__'
+        read_only_fields = ['user_id', 'project_id', 'permission', 'role']
 
 
 class ContributorSerializerSelector:
     list = ContributorListSerializer
-    detail = ContributorListSerializer
+    detail = ContributorDetailSerializer
+    create = ContributorCreateSerializer
 
 
 class ProjectListSerializer(ModelSerializer):

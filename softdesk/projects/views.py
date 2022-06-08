@@ -4,7 +4,7 @@ from projects.serializers import ProjectSerializerSelector,\
                                  IssueSerializerSelector,\
                                  ContributorSerializerSelector,\
                                  CommentSerializerSelector
-from projects.permissions import IsContributor, IsAuthorOrReadOnly
+from projects.permissions import IsContributor, IsAuthorOrReadOnly, IsProjectAuthorOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 from authentication.models import User
 from rest_framework import status
@@ -66,7 +66,25 @@ class ProjectViewSet(ModelViewSet):
 class ContributorViewSet(ModelViewSet):
     serializer_class = ContributorSerializerSelector.list
     multi_serializer_class = ContributorSerializerSelector
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
+    permission_classes = [IsAuthenticated, IsProjectAuthorOrReadOnly, IsContributor]
+
+    def perform_create(self, serializer):
+        project = Project.objects.get(project_id=self.kwargs["projects_pk"])
+        try:
+            new_email = serializer.initial_data['user_id']
+            new_contributor = User.objects.get(email=new_email)
+        except Exception:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if Contributor.objects.filter(
+                                      user_id=new_contributor,
+                                      project_id=project
+                                      ).exists():
+            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        serializer.save(
+                        user_id=new_contributor,
+                        project_id=project,
+                        permission="Contributeur"
+                        )
 
     def update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -74,6 +92,13 @@ class ContributorViewSet(ModelViewSet):
     def get_queryset(self):
         project_pk = self.kwargs['projects_pk']
         return Contributor.objects.filter(project_id=project_pk)
+
+    def get_serializer_class(self):
+        if self.detail:
+            return self.multi_serializer_class.detail
+        elif self.action == 'create':
+            return self.multi_serializer_class.create
+        return self.serializer_class
 
 
 class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
@@ -133,4 +158,5 @@ class CommentViewSet(ModelViewSet):
 
     def get_queryset(self):
         issue_pk = self.kwargs["issues_pk"]
-        return Comment.objects.filter(issue_id=issue_pk)
+        project_pk = self.kwargs["projects_pk"]
+        return Comment.objects.filter(issue_id=issue_pk, project_id = project_pk)
