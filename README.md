@@ -27,10 +27,10 @@ The spimplest way to test it is to:
 7. Click the link in your command line interface or copy the url in your web browser:
     It looks like: Starting development server at http://127.0.0.1:8000/
 
-8. Pour créer un accès adimistrateur:
+8. Create admin account:
 
         python manage.py createsuperuser
 
-9. Pour accéder à l'admin du site l'adresse http://127.0.0.1:8000/admin
+9. Admin url: http://127.0.0.1:8000/admin
 
 Note: respects PEP8 thanks to flake8

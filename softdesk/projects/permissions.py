@@ -24,6 +24,7 @@ class IsAuthorOrReadOnly(BasePermission):
             return True
         return obj.author_user_id == request.user
 
+
 class IsProjectAuthorOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:

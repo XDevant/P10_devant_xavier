@@ -3,15 +3,6 @@ from projects.models import Project, Issue, Comment, Contributor
 from authentication.models import User
 
 
-class UserFilteredPrimaryKeyRelatedField(PrimaryKeyRelatedField):
-    def get_queryset(self):
-        request = self.context.get('request', None)
-        queryset = super(UserFilteredPrimaryKeyRelatedField, self).get_queryset()
-        if not request or not queryset:
-            return None
-        return queryset.filter(user=request.user)
-
-
 class ContributorFilteredPKRF(PrimaryKeyRelatedField):
     def get_queryset(self):
         view = self.context.get('view', None)

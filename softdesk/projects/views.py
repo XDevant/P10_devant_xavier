@@ -89,6 +89,15 @@ class ContributorViewSet(ModelViewSet):
     def update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def destroy(self, request, *args, **kwargs):
+        """We override the method to forbid the Author to delete it's
+        contribution and create an orphean project."""
+        instance = self.get_object()
+        if instance.permission == "Auteur":
+            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_queryset(self):
         project_pk = self.kwargs['projects_pk']
         return Contributor.objects.filter(project_id=project_pk)
