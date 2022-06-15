@@ -1,15 +1,16 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.serializers import ValidationError
 from projects.models import Project, Issue, Comment, Contributor
 from projects.serializers import ProjectSerializerSelector,\
                                  IssueSerializerSelector,\
                                  ContributorSerializerSelector,\
                                  CommentSerializerSelector
 from projects.permissions import IsContributor, IsAuthorOrReadOnly, IsProjectAuthorOrReadOnly
-from rest_framework.permissions import IsAuthenticated
 from authentication.models import User
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.generics import get_object_or_404
+
 
 
 class MultipleSerializerMixin:
@@ -44,9 +45,12 @@ class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
                                 )
 
     def partial_update(self, *args, **kwargs):
+        """This method is not implemented"""
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get_queryset(self):
+        """We filter the project list to show only the projects the user is
+        contributor of."""
         queryset = super(ProjectViewSet, self).get_queryset()
         user =  self.request.user
         user_id = getattr(user, 'user_id')
@@ -65,15 +69,15 @@ class ContributorViewSet(ModelViewSet):
     def perform_create(self, serializer):
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
         try:
-            new_email = serializer.initial_data['user_id']
+            new_email = serializer.initial_data['email']
             new_contributor = User.objects.get(email=new_email)
         except Exception:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise ValidationError("Email not found")
         if Contributor.objects.filter(
                                       user_id=new_contributor,
                                       project_id=project
                                       ).exists():
-            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+            raise ValidationError("Target is already contributor")
         serializer.save(
                         user_id=new_contributor,
                         project_id=project,
@@ -81,6 +85,7 @@ class ContributorViewSet(ModelViewSet):
                         )
 
     def update(self, *args, **kwargs):
+        """This method is not implemented"""
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
@@ -109,31 +114,27 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
     multi_serializer_class = IssueSerializerSelector
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def perform_create(self, serializer):
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
-        if 'assignee_user_id' in  serializer.initial_data.keys():
+        if 'assignee_email' in  serializer.initial_data.keys():
             try:
-                user_id = serializer.initial_data['assignee_user_id']
-                assignee = User.objects.get(user_id=user_id)
+                assignee_email = serializer.initial_data['assignee_email']
+                assignee = User.objects.get(email=assignee_email)
             except Exception:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                raise ValidationError("assignee_email must be a contributor email")
         else:
-            assignee = request.user
+            assignee = self.request.user
         serializer.save(
                         assignee_user_id=assignee,
-                        author_user_id=request.user,
+                        author_user_id=self.request.user,
                         project_id=project
                         )
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED,
-                        headers=headers
-                        )
+
+    def perform_update(self, serializer):
+        self.perform_create(serializer)
 
     def partial_update(self, *args, **kwargs):
+        """This method is not implemented"""
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
  
     def get_queryset(self):
@@ -157,6 +158,7 @@ class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
                         )
 
     def partial_update(self, *args, **kwargs):
+        """This method is not implemented"""
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get_queryset(self):

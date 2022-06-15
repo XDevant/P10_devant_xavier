@@ -4,6 +4,8 @@ from authentication.models import User
 
 
 class ChoiceField(serializers.ChoiceField):
+    """For all choice fields we make sure not to be case sensitive and provide
+    adequate feedback."""
     def to_internal_value(self, data):
         for key in self._choices.keys():
             if key.lower() == data.lower():
@@ -24,38 +26,47 @@ class ContributorFilteredPKRF(serializers.PrimaryKeyRelatedField):
 
 
 class ContributorListSerializer(serializers.ModelSerializer):
-    user_id = serializers.StringRelatedField()
+    """We only send user (user full name, email) and role.
+    Permission field is auto-added, author is identified by his role:
+    'Chef de projet'."""
+    user = serializers.StringRelatedField(source='user_id')
 
     class Meta:
         model = Contributor
-        fields = ['id', 'user_id', 'role']
-        read_only_fields = ['user_id']
+        fields = ['id', 'user', 'role']
+        read_only_fields = ['user']
 
 
 class ContributorCreateSerializer(serializers.ModelSerializer):
-    user_id = serializers.EmailField(max_length=140)
+    """Project authors can add new contributors via their email only."""
+    email = serializers.EmailField(source='user_id', max_length=140)
 
     class Meta:
         model = Contributor
-        fields = ['id', 'user_id', 'role']
+        fields = ['id', 'email', 'role', 'project_id']
+        read_only_fields = ['project_id']
 
-class ContributorDetailSerializer(serializers.ModelSerializer):
-    user_id = serializers.StringRelatedField()
 
+class ContributorDetailSerializer(ContributorListSerializer):
+    """Read only, we can not update contributors, only retrieve/delete them"""
     class Meta:
         model = Contributor
-        fields = '__all__'
-        read_only_fields = ['user_id', 'project_id', 'permission', 'role']
+        fields = ['id', 'user', 'project_id', 'permission', 'role']
+        read_only_fields = ['user', 'project_id', 'permission', 'role']
 
 
 class ContributorSerializerSelector:
+    """Import container for the view and it's get_serializer method"""
     list = ContributorListSerializer
     detail = ContributorDetailSerializer
     create = ContributorCreateSerializer
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
+    author = serializers.StringRelatedField(
+                                            source='author_user_id',
+                                            read_only=True
+                                            )
     type = ChoiceField(choices=Project.Type.choices)
 
     class Meta:
@@ -64,10 +75,9 @@ class ProjectListSerializer(serializers.ModelSerializer):
         read_only_fields = ['author']
         
 
-class ProjectDetailSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
+class ProjectDetailSerializer(ProjectListSerializer):
+    """Inhérits author and type from the list serializer """
     contributor_list = ContributorListSerializer(many=True, read_only=True)
-    type = ChoiceField(choices=Project.Type.choices)
 
     class Meta:
         model = Project
@@ -81,37 +91,51 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializerSelector:
+    """Import container for the view and it's get_serializer method"""
     list = ProjectListSerializer
     detail = ProjectDetailSerializer
 
 
 class IssueListSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
-    assignee_user_id = ContributorFilteredPKRF(queryset=User.objects.all(), required=False)
+    author = serializers.StringRelatedField(source='author_user_id',
+                                            read_only=True)
+    assignee_email = serializers.EmailField(source='assignee_user_id',required=False)
     tag = ChoiceField(choices=Issue.Tag.choices)
     priority = ChoiceField(choices=Issue.Priority.choices)
     status = ChoiceField(choices=Issue.Status.choices)
 
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'assignee_user_id', 'project_id', 'author']
+        fields = ['id',
+                  'title',
+                  'description',
+                  'tag',
+                  'priority',
+                  'status',
+                  'assignee_email',
+                  'project_id',
+                  'author']
         read_only_fields = ['project_id', 'author']
 
 
-class IssueDetailSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
-    assignee_user_id = ContributorFilteredPKRF(queryset=User.objects.all(), required=False)
-    tag = ChoiceField(choices=Issue.Tag.choices)
-    priority = ChoiceField(choices=Issue.Priority.choices)
-    status = ChoiceField(choices=Issue.Status.choices)
-
+class IssueDetailSerializer(IssueListSerializer):
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'tag', 'priority', 'status', 'assignee_user_id', 'project_id', 'author', 'created_time']
+        fields = ['id',
+                  'title',
+                  'description',
+                  'tag',
+                  'priority',
+                  'status',
+                  'assignee_email',
+                  'project_id',
+                  'author',
+                  'created_time']
         read_only_fields = ['project_id', 'author', 'created_time']
 
 
 class IssueSerializerSelector:
+    """Import container for the view and it's get_serializer method"""
     list = IssueListSerializer
     detail = IssueDetailSerializer
 
@@ -121,7 +145,11 @@ class CommentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['comment_id', 'description', 'project_id', 'issue_id', 'author']
+        fields = ['comment_id',
+                  'description',
+                  'project_id',
+                  'issue_id',
+                  'author']
         read_only_fields = ['project_id', 'issue_id', 'author']
 
 
@@ -130,10 +158,16 @@ class CommentDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields =  ['comment_id', 'description', 'project_id', 'issue_id', 'author', 'created_time']
+        fields =  ['comment_id',
+                   'description',
+                   'project_id',
+                   'issue_id',
+                   'author',
+                   'created_time']
         read_only_fields = ['project_id', 'issue_id', 'author', 'created_time']
 
 
 class CommentSerializerSelector:
+    """Import container for the view and it's get_serializer method"""
     list = CommentListSerializer
     detail = CommentDetailSerializer
