@@ -147,7 +147,7 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
         return Issue.objects.filter(project_id=project_pk)
 
 
-class CommentViewSet(ModelViewSet):
+class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = CommentSerializerSelector.list
     multi_serializer_class = CommentSerializerSelector
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly, IsContributor]
