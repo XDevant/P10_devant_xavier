@@ -23,29 +23,25 @@ class MultipleSerializerMixin:
         return self.serializer_class
 
 
-class ProjectViewSet(ModelViewSet):
+class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = ProjectSerializerSelector.list
     multi_serializer_class = ProjectSerializerSelector
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
     queryset = Project.objects.all()
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        project = serializer.save(author_user_id=request.user)
+    def perform_create(self, serializer):
+        """
+        We fill the contributor through table while we save the new project
+        """
+        current_user = self.request.user
+        project = serializer.save(author_user_id=current_user)
         project.contributors.add(
-                                request.user,
+                                current_user,
                                 through_defaults={
                                                   'permission': 'Auteur',
                                                   'role': "Chef de projet"
                                                   }
                                 )
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED,
-                        headers=headers
-                        )
 
     def partial_update(self, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -56,17 +52,15 @@ class ProjectViewSet(ModelViewSet):
         user_id = getattr(user, 'user_id')
         if isinstance(user, User):
             return queryset.filter(contributors__user_id=user_id)
-
-    def get_serializer_class(self):
-        if self.multi_serializer_class is not None and self.detail:
-            return self.multi_serializer_class.detail
-        return self.serializer_class
+        return None
 
 
 class ContributorViewSet(ModelViewSet):
     serializer_class = ContributorSerializerSelector.list
     multi_serializer_class = ContributorSerializerSelector
-    permission_classes = [IsAuthenticated, IsProjectAuthorOrReadOnly, IsContributor]
+    permission_classes = [IsAuthenticated,
+                          IsProjectAuthorOrReadOnly,
+                          IsContributor]
 
     def perform_create(self, serializer):
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
