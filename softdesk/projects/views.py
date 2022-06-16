@@ -3,13 +3,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.serializers import ValidationError
+from authentication.models import User
 from projects.models import Project, Issue, Comment, Contributor
 from projects.serializers import ProjectSerializerSelector,\
                                  IssueSerializerSelector,\
                                  ContributorSerializerSelector,\
                                  CommentSerializerSelector
-from projects.permissions import IsContributor, IsAuthorOrReadOnly, IsProjectAuthorOrReadOnly
-from authentication.models import User
+from projects.permissions import IsContributor,\
+                                 IsAuthorOrReadOnly,\
+                                 IsProjectAuthorOrReadOnly
 
 
 

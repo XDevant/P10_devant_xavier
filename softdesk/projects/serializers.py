@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from projects.models import Project, Issue, Comment, Contributor
-from authentication.models import User
 
 
 class ChoiceField(serializers.ChoiceField):
@@ -13,16 +12,6 @@ class ChoiceField(serializers.ChoiceField):
         keys = list(self.choices.keys())
         message = f"{self.field_name} must be one of the following: {keys}"
         raise serializers.ValidationError({'ValueError': message})
-
-class ContributorFilteredPKRF(serializers.PrimaryKeyRelatedField):
-    def get_queryset(self):
-        view = self.context.get('view', None)
-        queryset = super(ContributorFilteredPKRF, self).get_queryset()
-        if not view or not queryset:
-            return None
-        project_id = view.kwargs['projects_pk']
-        qset = queryset.filter(project_contributors__project_id=project_id)
-        return qset
 
 
 class ContributorListSerializer(serializers.ModelSerializer):
@@ -72,12 +61,13 @@ class ProjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['project_id', 'title', 'description', 'type', 'author']
-        read_only_fields = ['author']
         
 
 class ProjectDetailSerializer(ProjectListSerializer):
     """Inhérits author and type from the list serializer """
     contributor_list = ContributorListSerializer(many=True, read_only=True)
+    issues  = serializers.IntegerField(source='project_issue.count',
+                                               read_only=True)
 
     class Meta:
         model = Project
@@ -86,8 +76,8 @@ class ProjectDetailSerializer(ProjectListSerializer):
                   'description',
                   'type',
                   'author',
-                  'contributor_list']
-        read_only_fields = ['author', 'contributor_list']
+                  'contributor_list',
+                  'issues']
 
 
 class ProjectSerializerSelector:
@@ -97,9 +87,12 @@ class ProjectSerializerSelector:
 
 
 class IssueListSerializer(serializers.ModelSerializer):
+    """We use a custom ChoiceField to provider feedback to user and
+    make sure inputs are not case sensitive"""
     author = serializers.StringRelatedField(source='author_user_id',
                                             read_only=True)
-    assignee_email = serializers.EmailField(source='assignee_user_id',required=False)
+    assignee_email = serializers.EmailField(source='assignee_user_id',
+                                            required=False)
     tag = ChoiceField(choices=Issue.Tag.choices)
     priority = ChoiceField(choices=Issue.Priority.choices)
     status = ChoiceField(choices=Issue.Status.choices)
@@ -115,10 +108,14 @@ class IssueListSerializer(serializers.ModelSerializer):
                   'assignee_email',
                   'project_id',
                   'author']
-        read_only_fields = ['project_id', 'author']
+        read_only_fields = ['project_id']
 
 
 class IssueDetailSerializer(IssueListSerializer):
+    """Inhérits from the issue list serializer with few fields added"""
+    comments  = serializers.IntegerField(source='issue_comment.count',
+                                               read_only=True)
+
     class Meta:
         model = Issue
         fields = ['id',
@@ -130,8 +127,10 @@ class IssueDetailSerializer(IssueListSerializer):
                   'assignee_email',
                   'project_id',
                   'author',
-                  'created_time']
-        read_only_fields = ['project_id', 'author', 'created_time']
+                  'created_time',
+                  'comments',
+                  ]
+        read_only_fields = ['project_id', 'created_time']
 
 
 class IssueSerializerSelector:
@@ -150,7 +149,7 @@ class CommentListSerializer(serializers.ModelSerializer):
                   'project_id',
                   'issue_id',
                   'author']
-        read_only_fields = ['project_id', 'issue_id', 'author']
+        read_only_fields = ['project_id', 'issue_id',]
 
 
 class CommentDetailSerializer(serializers.ModelSerializer):
@@ -164,7 +163,7 @@ class CommentDetailSerializer(serializers.ModelSerializer):
                    'issue_id',
                    'author',
                    'created_time']
-        read_only_fields = ['project_id', 'issue_id', 'author', 'created_time']
+        read_only_fields = ['project_id', 'issue_id', 'created_time']
 
 
 class CommentSerializerSelector:

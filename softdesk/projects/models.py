@@ -74,7 +74,8 @@ class Issue(models.Model):
     priority = models.CharField(choices=Priority.choices, max_length=16)
     project_id = models.ForeignKey(
                                    to=Project,
-                                   on_delete=models.CASCADE
+                                   on_delete=models.CASCADE,
+                                   related_name='project_issue'
                                    )
     status = models.CharField(choices=Status.choices, max_length=16)
     author_user_id = models.ForeignKey(
@@ -84,7 +85,8 @@ class Issue(models.Model):
                                        )
     assignee_user_id = models.ForeignKey(
                                          to=settings.AUTH_USER_MODEL,
-                                         on_delete=models.CASCADE,
+                                         null=True,
+                                         on_delete=models.SET_NULL,
                                          related_name='issue_assignee'
                                          )
     created_time = models.DateTimeField(auto_now_add=True)
@@ -101,10 +103,11 @@ class Comment(models.Model):
     project_id = models.ForeignKey(
                                    default=0,
                                    to=Project,
-                                   on_delete=models.CASCADE
+                                   on_delete=models.CASCADE,
                                    )
     issue_id = models.ForeignKey(
                                  to=Issue,
-                                 on_delete=models.CASCADE
+                                 on_delete=models.CASCADE,
+                                 related_name='issue_comment'
                                  )
     created_time = models.DateTimeField(auto_now_add=True)

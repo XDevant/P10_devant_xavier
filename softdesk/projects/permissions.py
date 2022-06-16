@@ -3,6 +3,7 @@ from .models import Contributor
 
 
 class IsContributor(BasePermission):
+    """We check the Contributor table for a user-project pair"""
     def has_permission(self, request, view):
         try:
             Contributor.objects.get(
