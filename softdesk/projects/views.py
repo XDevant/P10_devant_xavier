@@ -14,7 +14,6 @@ from projects.permissions import IsContributor,\
                                  IsProjectAuthorOrReadOnly
 
 
-
 class MultipleSerializerMixin:
     serializer_class = None
     multi_serializer_class = None
@@ -54,7 +53,7 @@ class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
         """We filter the project list to show only the projects the user is
         contributor of."""
         queryset = super(ProjectViewSet, self).get_queryset()
-        user =  self.request.user
+        user = self.request.user
         user_id = getattr(user, 'user_id')
         if isinstance(user, User):
             return queryset.filter(contributors__user_id=user_id)
@@ -118,12 +117,13 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
 
     def perform_create(self, serializer):
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
-        if 'assignee_email' in  serializer.initial_data.keys():
+        message = "assignee_email must be a valid contributor email"
+        if 'assignee_email' in serializer.initial_data.keys():
             try:
                 assignee_email = serializer.initial_data['assignee_email']
                 assignee = User.objects.get(email=assignee_email)
             except Exception:
-                raise ValidationError("assignee_email must be a contributor email")
+                raise ValidationError(message)
         else:
             assignee = self.request.user
         serializer.save(
@@ -138,7 +138,7 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
     def partial_update(self, *args, **kwargs):
         """This method is not implemented"""
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
- 
+
     def get_queryset(self):
         project_pk = self.kwargs["projects_pk"]
         return Issue.objects.filter(project_id=project_pk)
@@ -166,4 +166,4 @@ class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
     def get_queryset(self):
         issue_pk = self.kwargs["issues_pk"]
         project_pk = self.kwargs["projects_pk"]
-        return Comment.objects.filter(issue_id=issue_pk, project_id = project_pk)
+        return Comment.objects.filter(issue_id=issue_pk, project_id=project_pk)

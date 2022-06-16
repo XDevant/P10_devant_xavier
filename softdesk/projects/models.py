@@ -10,7 +10,6 @@ class Project(models.Model):
         IOS = 'iOS'
         ANDROID = 'Android'
 
-
     project_id = models.BigAutoField(primary_key=True)
     title = models.CharField(max_length=64)
     description = models.CharField(max_length=256)
@@ -30,7 +29,6 @@ class Contributor(models.Model):
     class Permission(models.TextChoices):
         AUTHOR = 'Auteur'
         CONTRIBUTOR = 'Contributeur'
-
 
     user_id = models.ForeignKey(
                                 to=settings.AUTH_USER_MODEL,
@@ -55,18 +53,15 @@ class Issue(models.Model):
         REFACTOR = 'AMELIORER'
         TODO = 'TACHE'
 
-
     class Priority(models.TextChoices):
         LOW = 'FAIBLE'
         MEDIUM = 'MOYENNE'
         HIGH = 'ELEVEE'
 
-
     class Status(models.TextChoices):
         TO_BE_DONE = 'A faire'
         IN_PROGRESS = 'En cours'
         DONE = 'Terminé'
-
 
     title = models.CharField(max_length=64)
     description = models.CharField(max_length=256)

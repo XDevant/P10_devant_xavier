@@ -7,9 +7,9 @@ class IsContributor(BasePermission):
     def has_permission(self, request, view):
         try:
             Contributor.objects.get(
-                                       user_id=request.user.user_id,
-                                       project_id=view.kwargs['projects_pk']
-                                       )
+                                    user_id=request.user.user_id,
+                                    project_id=view.kwargs['projects_pk']
+                                    )
             return True
         except Exception:
             return False
@@ -27,8 +27,15 @@ class IsAuthorOrReadOnly(BasePermission):
 
 
 class IsProjectAuthorOrReadOnly(BasePermission):
+    """
+    Object-level permission to only allow the project's author to delete
+    contributors.
+    """
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-        author_user_id = Contributor.objects.get(project_id=view.kwargs['projects_pk'], permission="Auteur").user_id
+        project_id = view.kwargs['projects_pk']
+        author_user_id = Contributor.objects.get(project_id=project_id,
+                                                 permission="Auteur"
+                                                 ).user_id
         return author_user_id == request.user

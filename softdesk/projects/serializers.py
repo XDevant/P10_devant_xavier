@@ -61,13 +61,13 @@ class ProjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['project_id', 'title', 'description', 'type', 'author']
-        
+
 
 class ProjectDetailSerializer(ProjectListSerializer):
     """Inhérits author and type from the list serializer """
     contributor_list = ContributorListSerializer(many=True, read_only=True)
-    issues  = serializers.IntegerField(source='project_issue.count',
-                                               read_only=True)
+    issues = serializers.IntegerField(source='project_issue.count',
+                                      read_only=True)
 
     class Meta:
         model = Project
@@ -113,8 +113,8 @@ class IssueListSerializer(serializers.ModelSerializer):
 
 class IssueDetailSerializer(IssueListSerializer):
     """Inhérits from the issue list serializer with few fields added"""
-    comments  = serializers.IntegerField(source='issue_comment.count',
-                                               read_only=True)
+    comments = serializers.IntegerField(source='issue_comment.count',
+                                        read_only=True)
 
     class Meta:
         model = Issue
@@ -140,7 +140,8 @@ class IssueSerializerSelector:
 
 
 class CommentListSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
+    author = serializers.StringRelatedField(source='author_user_id',
+                                            read_only=True)
 
     class Meta:
         model = Comment
@@ -149,20 +150,21 @@ class CommentListSerializer(serializers.ModelSerializer):
                   'project_id',
                   'issue_id',
                   'author']
-        read_only_fields = ['project_id', 'issue_id',]
+        read_only_fields = ['project_id', 'issue_id']
 
 
 class CommentDetailSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='author_user_id', read_only=True)
+    author = serializers.StringRelatedField(source='author_user_id',
+                                            read_only=True)
 
     class Meta:
         model = Comment
-        fields =  ['comment_id',
-                   'description',
-                   'project_id',
-                   'issue_id',
-                   'author',
-                   'created_time']
+        fields = ['comment_id',
+                  'description',
+                  'project_id',
+                  'issue_id',
+                  'author',
+                  'created_time']
         read_only_fields = ['project_id', 'issue_id', 'created_time']
 
 
