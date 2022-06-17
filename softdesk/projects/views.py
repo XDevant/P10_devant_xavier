@@ -117,12 +117,14 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
 
     def perform_create(self, serializer):
         project = Project.objects.get(project_id=self.kwargs["projects_pk"])
-        message = "assignee_email must be a valid contributor email"
         if 'assignee_email' in serializer.initial_data.keys():
             try:
                 assignee_email = serializer.initial_data['assignee_email']
                 assignee = User.objects.get(email=assignee_email)
+                Contributor.objects.get(user_id=assignee,
+                                        project_id=project)
             except Exception:
+                message = "assignee_email must be a valid contributor email"
                 raise ValidationError(message)
         else:
             assignee = self.request.user
