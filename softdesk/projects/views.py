@@ -94,7 +94,7 @@ class ContributorViewSet(ModelViewSet):
         contribution and create an orphean project."""
         instance = self.get_object()
         if instance.permission == "Auteur":
-            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
