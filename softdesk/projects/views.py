@@ -91,7 +91,9 @@ class ContributorViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """We override the method to forbid the Author to delete it's
-        contribution and create an orphean project."""
+        contribution and create an orphean project.
+        The delete model method has been overridden to delete all
+        contribution to the project made by the deleted contributor."""
         instance = self.get_object()
         if instance.permission == "Auteur":
             return Response(status=status.HTTP_401_UNAUTHORIZED)

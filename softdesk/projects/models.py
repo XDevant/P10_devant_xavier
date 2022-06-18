@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F
 from django.conf import settings
 from authentication.models import User
 
@@ -45,6 +46,19 @@ class Contributor(models.Model):
 
     def __str__(self):
         return f"{self.user_id}:{self.permission} ({self.role})"
+
+    @transaction.atomic
+    def delete(self):
+        user_issues = Issue.objects.filter(project_id=self.project_id,
+                                           author_user_id=self.user_id)
+        user_comments = Comment.objects.filter(project_id=self.project_id,
+                                               author_user_id=self.user_id)
+        assignements = Issue.objects.filter(project_id=self.project_id,
+                                            assignee_user_id=self.user_id)
+        assignements.update(assignee_user_id=F('author_user_id'))
+        user_issues.delete()
+        user_comments.delete()
+        return super().delete()
 
 
 class Issue(models.Model):
