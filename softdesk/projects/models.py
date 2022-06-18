@@ -44,11 +44,18 @@ class Contributor(models.Model):
     permission = models.CharField(choices=Permission.choices, max_length=16)
     role = models.CharField(max_length=64)
 
+    class Meta:
+        unique_together = ('user_id', 'project_id',)
+
     def __str__(self):
         return f"{self.user_id}:{self.permission} ({self.role})"
 
     @transaction.atomic
     def delete(self):
+        """
+        When a contributor is removed from a project, all it's contributions
+        are deleted and it's assignements are set back to the issue's author.
+        """
         user_issues = Issue.objects.filter(project_id=self.project_id,
                                            author_user_id=self.user_id)
         user_comments = Comment.objects.filter(project_id=self.project_id,
